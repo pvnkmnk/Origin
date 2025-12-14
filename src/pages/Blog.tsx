@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { mockPosts } from "../shared/mockData";
 import { Link } from "wouter";
+import { trpc } from "../lib/trpc";
 import { FileText, Calendar, ArrowRight, X } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -8,7 +8,7 @@ export default function Blog() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const postsQuery = { data: mockPosts, isLoading: false };
+  const postsQuery = trpc.blog.getPublishedPosts.useQuery();
 
   // Extract all unique tags from posts
   const allTags = useMemo(() => {

@@ -1,19 +1,27 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
+import { COOKIE_NAME } from "./server_const.js";
+import { getSessionCookieOptions } from "./_core/cookies.js";
+import { systemRouter } from "./_core/systemRouter.js";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc.js";
 import { z } from "zod";
-import { createContactMessage, subscribeToNewsletter, getContactMessages, getNewsletterSubscriptions, unsubscribeFromNewsletter, createBlogPost, getAllBlogPosts, getBlogPostBySlug, updateBlogPost, deleteBlogPost, getPublishedBlogPosts, createBlogTag, getAllBlogTags } from "./db";
-import { ENV } from "./_core/env";
+import { createContactMessage, subscribeToNewsletter, getContactMessages, getNewsletterSubscriptions, unsubscribeFromNewsletter, createBlogPost, getAllBlogPosts, getBlogPostBySlug, updateBlogPost, deleteBlogPost, getPublishedBlogPosts, createBlogTag, getAllBlogTags } from "./db.js";
+import { ENV } from "./_core/env.js";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    me: publicProcedure.query(({ ctx }: any) => ctx.user),
+    logout: publicProcedure.mutation(({ ctx }: any) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Clear cookie by setting Max-Age=0
+      const parts = [
+        `${COOKIE_NAME}=; Max-Age=0`,
+        `Path=${cookieOptions.path || '/'}`,
+        cookieOptions.httpOnly ? 'HttpOnly' : '',
+        cookieOptions.sameSite ? `SameSite=${cookieOptions.sameSite}` : '',
+        cookieOptions.secure ? 'Secure' : '',
+      ].filter(Boolean);
+      ctx.res.header('Set-Cookie', parts.join('; '));
       return {
         success: true,
       } as const;

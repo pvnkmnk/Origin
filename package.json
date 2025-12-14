@@ -6,24 +6,43 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node --experimental-specifier-resolution=node ./dist-server/server/index.js",
+    "build:server": "tsc -p server.tsconfig.json",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:seed": "node --experimental-specifier-resolution=node ./dist-server/server/seed.js",
+    "setup": "npm install && npm run db:generate && npm run db:migrate && npm run build:server",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@tanstack/react-query": "^4.36.1",
+    "@trpc/client": "^10.45.2",
+    "@trpc/react-query": "^10.45.2",
+    "@trpc/server": "^10.45.2",
+    "drizzle-orm": "^0.36.3",
+    "fastify": "^5.1.0",
+    "lucide-react": "^0.475.0",
+    "mysql2": "^3.11.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "wouter": "^3.1.0",
-    "lucide-react": "^0.475.0",
     "react-markdown": "^9.0.1",
-    "remark-gfm": "^4.0.0"
+    "remark-gfm": "^4.0.0",
+    "wouter": "^3.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
+    "drizzle-kit": "^0.18.1",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.3",
-    "vite": "^5.0.12",
-    "@vitejs/plugin-react": "^4.2.1"
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
   }
 }

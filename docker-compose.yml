@@ -1,0 +1,16 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-joydao_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-joydao}
+      MYSQL_USER: ${MYSQL_USER:-joydao}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-joydao_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: ["mysqld", "--default-authentication-plugin=mysql_native_password", "--mysqlx=0"]
+volumes:
+  mysql_data:

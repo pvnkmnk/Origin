@@ -1,6 +1,5 @@
 import { useRoute, useLocation } from "wouter";
 import { ArrowLeft, Calendar, FileText } from "lucide-react";
-import { mockPosts } from "../shared/mockData";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -9,7 +8,7 @@ export default function BlogPost() {
   const [match, params] = useRoute("/blog/:slug");
 
   const slug = params?.slug as string;
-  const post = mockPosts.find(p => p.slug === slug);
+  const postQuery = trpc.blog.getPostBySlug.useQuery({ slug }, { enabled: !!slug });
 
   const formatDate = (date: Date | null) => {
     if (!date) return "Unpublished";
@@ -22,9 +21,7 @@ export default function BlogPost() {
 
   if (!match) return null;
 
-  if (!match) return null;
-
-  if (!post) {
+  if (!postQuery.data) {
     return (
       <div className="min-h-screen bg-black text-primary">
         <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">
@@ -45,7 +42,6 @@ export default function BlogPost() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-black text-primary">
       {/* Header */}
@@ -63,23 +59,23 @@ export default function BlogPost() {
             <FileText className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold text-accent font-mono mb-3">
-                {post.title}
+                {postQuery.data?.title}
               </h1>
               <div className="flex items-center gap-4 text-sm text-muted-foreground font-mono">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>{formatDate(post.publishedAt)}</span>
+                  <span>{formatDate(postQuery.data?.publishedAt ?? null)}</span>
                 </div>
                 <span className="text-xs px-2 py-1 border border-primary text-primary bg-black/50">
-                  {post.status.toUpperCase()}
+                  {postQuery.data?.status.toUpperCase()}
                 </span>
               </div>
             </div>
           </div>
 
-          {post.excerpt && (
+          {postQuery.data?.excerpt && (
             <p className="text-primary text-lg italic border-l-2 border-accent pl-4 py-2">
-              {post.excerpt}
+              {postQuery.data?.excerpt}
             </p>
           )}
         </div>
@@ -91,7 +87,7 @@ export default function BlogPost() {
           <div className="prose prose-invert max-w-none">
             <div className="border border-accent/20 p-8 bg-black/50">
               <div className="prose prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{postQuery.data?.content || ""}</ReactMarkdown>
               </div>
             </div>
           </div>
@@ -102,13 +98,13 @@ export default function BlogPost() {
               <div className="border border-accent/20 p-4 bg-black/50">
                 <p className="text-xs text-muted-foreground mb-2">PUBLISHED</p>
                 <p className="text-accent font-mono">
-                  {formatDate(post.publishedAt)}
+                  {formatDate(postQuery.data?.publishedAt ?? null)}
                 </p>
               </div>
               <div className="border border-accent/20 p-4 bg-black/50">
                 <p className="text-xs text-muted-foreground mb-2">LAST_UPDATED</p>
                 <p className="text-accent font-mono">
-                  {formatDate(post.updatedAt)}
+                  {formatDate(postQuery.data?.updatedAt ?? null)}
                 </p>
               </div>
             </div>

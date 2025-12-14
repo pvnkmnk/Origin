@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
-import { CONFIG } from "../shared/config";
+import { trpc } from "../lib/trpc";
 
 interface FormData {
   name: string;
@@ -19,26 +19,7 @@ export default function ContactForm() {
   );
   const [statusMessage, setStatusMessage] = useState("");
 
-  const contactMutation = {
-    isPending: false,
-    mutateAsync: async (payload: { name: string; email: string; message: string }) => {
-      if (CONFIG.contactEndpoint) {
-        const res = await fetch(CONFIG.contactEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error("Contact submit failed");
-      } else {
-        // No endpoint configured. Simulate success for now.
-        await new Promise((r) => setTimeout(r, 400));
-      }
-      return { success: true } as const;
-    },
-  };
+  const contactMutation = trpc.contact.submit.useMutation();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

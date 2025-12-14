@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist-server",
+    "module": "NodeNext",
+    "target": "ES2020",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": false,
+    "strict": true
+  },
+  "include": ["server/**/*.ts", "_core/**/*.ts", "routers.ts", "db.ts", "schema.ts"],
+  "exclude": ["src", "const.ts"]
+}

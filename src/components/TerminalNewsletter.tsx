@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Mail, Send } from "lucide-react";
-import { CONFIG } from "../shared/config";
+import { trpc } from "../lib/trpc";
 
 interface TerminalLine {
   type: "input" | "output" | "command";
@@ -18,26 +18,7 @@ export default function TerminalNewsletter() {
   ]);
   const terminalRef = useRef<HTMLDivElement>(null);
 
-  const newsletterMutation = {
-    isPending: false,
-    mutateAsync: async ({ email }: { email: string }) => {
-      if (CONFIG.newsletterEndpoint) {
-        const res = await fetch(CONFIG.newsletterEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ email }),
-        });
-        if (!res.ok) throw new Error("Newsletter submit failed");
-      } else {
-        // No endpoint configured. Simulate success for now.
-        await new Promise((r) => setTimeout(r, 400));
-      }
-      return { success: true } as const;
-    },
-  };
+  const newsletterMutation = trpc.newsletter.subscribe.useMutation();
 
   // Auto-scroll to bottom
   useEffect(() => {

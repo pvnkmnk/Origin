@@ -7,6 +7,11 @@ import ContactForm from "../components/ContactForm";
 import AnimatedCyberpunkFooter from "../components/AnimatedCyberpunkFooter";
 import { useLocation } from "wouter";
 
+// Local shim for Separator to avoid UI lib dependency
+function Separator({ className = "" }: { className?: string }) {
+  return <div className={className} />;
+}
+
 export default function Home() {
   const [showBoot, setShowBoot] = useState(true);
   const [glitchActive, setGlitchActive] = useState(false);
@@ -286,17 +291,16 @@ export default function Home() {
   );
 }
 
+import { Link } from "wouter";
 function BlogNavLink() {
-  const [, setLocation] = useLocation();
   return (
-    <button 
-      className="border border-purple-500 text-purple-500 px-4 py-2 hover:bg-purple-500 hover:text-black rounded-none uppercase tracking-widest relative overflow-hidden"
-      onClick={() => setLocation("/blog")}
-    >
-      <span className="relative z-10 flex items-center gap-2">
-        Blog <FileText className="w-4 h-4" />
-      </span>
-      <div className="absolute inset-0 bg-purple-500 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-    </button>
+    <Link href="/blog">
+      <a className="border border-purple-500 text-purple-500 px-4 py-2 hover:bg-purple-500 hover:text-black rounded-none uppercase tracking-widest relative overflow-hidden inline-flex items-center gap-2">
+        <span className="relative z-10 flex items-center gap-2">
+          Blog <FileText className="w-4 h-4" />
+        </span>
+        <div className="absolute inset-0 bg-purple-500 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+      </a>
+    </Link>
   );
 }
