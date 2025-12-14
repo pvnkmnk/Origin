@@ -262,3 +262,44 @@ export async function getAllBlogTags() {
     }
     return await db.select().from(blogTags);
 }
+export async function addTagToPost(postId, tagId) {
+    const db = await getDb();
+    if (!db) {
+        const exists = mem.blogPostTags.find((bt) => bt.postId === postId && bt.tagId === tagId);
+        if (!exists)
+            mem.blogPostTags.push({ postId, tagId });
+        return { success: true };
+    }
+    // prevent duplicate
+    const existing = await db
+        .select()
+        .from(blogPostTags)
+        .where(eq(blogPostTags.postId, postId));
+    if (!existing.find((e) => e.tagId === tagId)) {
+        await db.insert(blogPostTags).values({ postId, tagId });
+    }
+    return { success: true };
+}
+export async function removeTagFromPost(postId, tagId) {
+    const db = await getDb();
+    if (!db) {
+        mem.blogPostTags = mem.blogPostTags.filter((bt) => !(bt.postId === postId && bt.tagId === tagId));
+        return { success: true };
+    }
+    await db.delete(blogPostTags).where(eq(blogPostTags.postId, postId) && eq(blogPostTags.tagId, tagId));
+    return { success: true };
+}
+export async function getTagsForPost(postId) {
+    const db = await getDb();
+    if (!db) {
+        const tagIds = mem.blogPostTags.filter((bt) => bt.postId === postId).map((bt) => bt.tagId);
+        return mem.blogTags.filter((t) => tagIds.includes(t.id));
+    }
+    // naive join
+    const all = await db.select().from(blogPostTags).where(eq(blogPostTags.postId, postId));
+    const ids = all.map((r) => r.tagId);
+    if (ids.length === 0)
+        return [];
+    const tagRows = await db.select().from(blogTags);
+    return tagRows.filter((t) => ids.includes(t.id));
+}

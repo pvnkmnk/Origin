@@ -9,6 +9,8 @@ export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const postsQuery = trpc.blog.getPublishedPosts.useQuery();
+  const tagsQuery = trpc.blog.getAllTags.useQuery();
+  const [activeTag, setActiveTag] = useState<number | null>(null);
 
   // Extract all unique tags from posts
   const allTags = useMemo(() => {

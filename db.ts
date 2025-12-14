@@ -217,9 +217,14 @@ export async function getBlogPostBySlug(slug: string) {
 export async function getPublishedBlogPosts() {
   const db = await getDb();
   if (!db) {
-    return mem.blogPosts.filter(p => (p as any).status === 'published').slice();
+    return mem.blogPosts
+      .filter((p) => (p as any).status === 'published' && (p as any).publishedAt)
+      .sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   }
-  return await db.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(blogPosts.publishedAt);
+  const rows = await db.select().from(blogPosts).where(eq(blogPosts.status, "published"));
+  return rows
+    .filter((r: any) => !!r.publishedAt)
+    .sort((a: any, b: any) => new Date(b.publishedAt as any).getTime() - new Date(a.publishedAt as any).getTime());
 }
 
 export async function getAllBlogPosts() {
@@ -233,14 +238,38 @@ export async function getAllBlogPosts() {
 export async function updateBlogPost(id: number, data: Partial<InsertBlogPost>) {
   const db = await getDb();
   if (!db) {
-    const post = mem.blogPosts.find(p => p.id === id);
+    const post = mem.blogPosts.find((p) => p.id === id) as any;
     if (post) {
-      Object.assign(post as any, data);
-      (post as any).updatedAt = new Date();
+      const next: any = { ...data };
+      // Handle publishedAt transitions
+      if (typeof data.status !== 'undefined') {
+        if (data.status === 'published' && !post.publishedAt) {
+          next.publishedAt = new Date();
+        }
+        if (data.status === 'draft') {
+          next.publishedAt = null;
+        }
+      }
+      Object.assign(post, next);
     }
     return { success: true } as any;
   }
-  return await db.update(blogPosts).set(data).where(eq(blogPosts.id, id));
+  // Fetch existing to compute transitions
+  const existingArr = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+  const existing: any = existingArr[0];
+  let nextPublishedAt = existing?.publishedAt ?? null;
+  if (typeof data.status !== 'undefined') {
+    if (data.status === 'published' && !existing?.publishedAt) {
+      nextPublishedAt = new Date();
+    }
+    if (data.status === 'draft') {
+      nextPublishedAt = null;
+    }
+  }
+  const toUpdate: any = { ...data, publishedAt: nextPublishedAt };
+  // Ensure createdAt is never overwritten
+  delete toUpdate.createdAt;
+  return await db.update(blogPosts).set(toUpdate).where(eq(blogPosts.id, id));
 }
 
 export async function deleteBlogPost(id: number) {
@@ -284,4 +313,48 @@ export async function getAllBlogTags() {
     return mem.blogTags.slice();
   }
   return await db.select().from(blogTags);
+}
+
+export async function addTagToPost(postId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) {
+    const exists = mem.blogPostTags.find((bt) => bt.postId === postId && bt.tagId === tagId);
+    if (!exists) mem.blogPostTags.push({ postId, tagId });
+    return { success: true } as any;
+  }
+  // prevent duplicate
+  const existing = await db
+    .select()
+    .from(blogPostTags)
+    .where(eq(blogPostTags.postId, postId) as any);
+  if (!existing.find((e: any) => e.tagId === tagId)) {
+    await db.insert(blogPostTags).values({ postId, tagId } as any);
+  }
+  return { success: true } as any;
+}
+
+export async function removeTagFromPost(postId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) {
+    mem.blogPostTags = mem.blogPostTags.filter((bt) => !(bt.postId === postId && bt.tagId === tagId));
+    return { success: true } as any;
+  }
+  await (db as any).delete(blogPostTags).where(
+    (eq(blogPostTags.postId, postId) as any) && (eq(blogPostTags.tagId, tagId) as any)
+  );
+  return { success: true } as any;
+}
+
+export async function getTagsForPost(postId: number) {
+  const db = await getDb();
+  if (!db) {
+    const tagIds = mem.blogPostTags.filter((bt) => bt.postId === postId).map((bt) => bt.tagId);
+    return mem.blogTags.filter((t) => tagIds.includes((t as any).id));
+  }
+  // naive join
+  const all = await db.select().from(blogPostTags).where(eq(blogPostTags.postId, postId));
+  const ids = all.map((r: any) => r.tagId);
+  if (ids.length === 0) return [] as any[];
+  const tagRows = await db.select().from(blogTags);
+  return tagRows.filter((t: any) => ids.includes(t.id));
 }

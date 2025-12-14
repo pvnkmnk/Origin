@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies.js";
 import { systemRouter } from "./_core/systemRouter.js";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc.js";
 import { z } from "zod";
-import { createContactMessage, subscribeToNewsletter, getContactMessages, getNewsletterSubscriptions, unsubscribeFromNewsletter, createBlogPost, getAllBlogPosts, getBlogPostBySlug, updateBlogPost, deleteBlogPost, getPublishedBlogPosts, getAllBlogTags } from "./db.js";
+import { createContactMessage, subscribeToNewsletter, getContactMessages, getNewsletterSubscriptions, unsubscribeFromNewsletter, createBlogPost, getAllBlogPosts, getBlogPostBySlug, updateBlogPost, deleteBlogPost, getPublishedBlogPosts, createBlogTag, getAllBlogTags, addTagToPost, removeTagFromPost, getTagsForPost } from "./db.js";
 import { ENV } from "./_core/env.js";
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -155,6 +155,15 @@ export const appRouter = router({
                 throw new Error("Failed to update blog post");
             }
         }),
+        createBlogTag: protectedProcedure
+            .input(z.object({ name: z.string().min(1), slug: z.string().min(1) }))
+            .mutation(async ({ ctx, input }) => {
+            if (ctx.user?.openId !== ENV.ownerOpenId) {
+                throw new Error("Unauthorized: Admin access only");
+            }
+            await createBlogTag({ name: input.name, slug: input.slug });
+            return { success: true };
+        }),
         deleteBlogPost: protectedProcedure
             .input(z.object({ id: z.number() }))
             .mutation(async ({ ctx, input }) => {
@@ -170,6 +179,24 @@ export const appRouter = router({
                 throw new Error("Failed to delete blog post");
             }
         }),
+        addTagToPost: protectedProcedure
+            .input(z.object({ postId: z.number(), tagId: z.number() }))
+            .mutation(async ({ ctx, input }) => {
+            if (ctx.user?.openId !== ENV.ownerOpenId) {
+                throw new Error("Unauthorized: Admin access only");
+            }
+            await addTagToPost(input.postId, input.tagId);
+            return { success: true };
+        }),
+        removeTagFromPost: protectedProcedure
+            .input(z.object({ postId: z.number(), tagId: z.number() }))
+            .mutation(async ({ ctx, input }) => {
+            if (ctx.user?.openId !== ENV.ownerOpenId) {
+                throw new Error("Unauthorized: Admin access only");
+            }
+            await removeTagFromPost(input.postId, input.tagId);
+            return { success: true };
+        }),
     }),
     blog: router({
         getPublishedPosts: publicProcedure.query(async () => {
@@ -182,6 +209,11 @@ export const appRouter = router({
         }),
         getAllTags: publicProcedure.query(async () => {
             return await getAllBlogTags();
+        }),
+        getTagsForPost: publicProcedure
+            .input(z.object({ postId: z.number() }))
+            .query(async ({ input }) => {
+            return await getTagsForPost(input.postId);
         }),
     }),
 });

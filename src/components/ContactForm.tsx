@@ -86,9 +86,6 @@ export default function ContactForm() {
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="text-xs font-mono p-2 border border-primary/30 bg-black/50 text-muted-foreground">
-          NOTE: Demo mode active. Submissions are simulated. In Phase B, messages will be stored internally in MySQL.
-        </div>
         <div className="font-mono text-xs text-muted-foreground mb-4">
           <span className="text-accent">{">"}</span> SEND_MESSAGE_TO_AGENT
           <br />

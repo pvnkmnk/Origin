@@ -7,6 +7,7 @@ import Admin from "./pages/Admin";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc } from "./lib/trpc";
 import { httpBatchLink } from "@trpc/client";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -48,11 +49,13 @@ const trpcClient = trpc.createClient({
 
 function App() {
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <Router />
-      </QueryClientProvider>
-    </trpc.Provider>
+    <ErrorBoundary>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <Router />
+        </QueryClientProvider>
+      </trpc.Provider>
+    </ErrorBoundary>
   );
 }
 

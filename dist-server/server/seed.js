@@ -1,7 +1,20 @@
-import { createBlogPost } from "../db.js";
+import { createBlogPost, createBlogTag, addTagToPost } from "../db.js";
 async function main() {
     try {
         const now = new Date();
+        // Create some tags
+        const tags = [
+            { name: "announcement", slug: "announcement" },
+            { name: "release", slug: "release" },
+            { name: "cyberpunk", slug: "cyberpunk" },
+            { name: "visuals", slug: "visuals" },
+        ];
+        const createdTags = [];
+        for (const t of tags) {
+            const ct = await createBlogTag({ ...t });
+            createdTags.push(ct?.insertId ? { id: ct.insertId, ...t } : ct);
+        }
+        const findTagId = (slug) => (createdTags.find((t) => t?.slug === slug)?.id) || undefined;
         await createBlogPost({
             title: "Welcome to JOYDAO.Z",
             slug: "welcome-to-joydao",
@@ -10,7 +23,7 @@ async function main() {
             status: "published",
             publishedAt: now,
         });
-        await createBlogPost({
+        const post2 = await createBlogPost({
             title: "Signals and Systems",
             slug: "signals-and-systems",
             excerpt: "Transmission clear.",
@@ -18,7 +31,43 @@ async function main() {
             status: "published",
             publishedAt: now,
         });
-        console.log("Seed completed: blog posts inserted.");
+        // Additional posts referencing Instagram content (placeholders)
+        const igPosts = [
+            {
+                title: "Neon Field Recording",
+                slug: "neon-field-recording",
+                excerpt: "Captured frequencies.",
+                content: `# Neon Field Recording\n\nCaptured ambient signals. See visuals on Instagram: https://instagram.com/joydao.light`,
+                tags: ["visuals", "cyberpunk"],
+            },
+            {
+                title: "Studio Pulse",
+                slug: "studio-pulse",
+                excerpt: "Work-in-progress from the lab.",
+                content: `# Studio Pulse\n\nLive patch explorations and process notes. See more: https://instagram.com/joydao.light`,
+                tags: ["release"],
+            },
+        ];
+        for (const p of igPosts) {
+            const result = await createBlogPost({
+                title: p.title,
+                slug: p.slug,
+                excerpt: p.excerpt,
+                content: p.content,
+                status: "published",
+                publishedAt: now,
+            });
+            const postId = result?.insertId; // MySQL result
+            if (postId) {
+                for (const slug of p.tags) {
+                    const tagId = findTagId(slug);
+                    if (tagId) {
+                        await addTagToPost(postId, tagId);
+                    }
+                }
+            }
+        }
+        console.log("Seed completed: blog posts and tags inserted.");
         process.exit(0);
     }
     catch (err) {

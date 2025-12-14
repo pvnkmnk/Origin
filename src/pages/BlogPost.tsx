@@ -2,6 +2,7 @@ import { useRoute, useLocation } from "wouter";
 import { ArrowLeft, Calendar, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { trpc } from "../lib/trpc";
 
 export default function BlogPost() {
   const [, setLocation] = useLocation();
@@ -9,6 +10,10 @@ export default function BlogPost() {
 
   const slug = params?.slug as string;
   const postQuery = trpc.blog.getPostBySlug.useQuery({ slug }, { enabled: !!slug });
+  const tagsQuery = trpc.blog.getTagsForPost.useQuery(
+    { postId: (postQuery.data as any)?.id ?? 0 }, 
+    { enabled: !!postQuery.data }
+  );
 
   const formatDate = (date: Date | null) => {
     if (!date) return "Unpublished";
@@ -20,6 +25,35 @@ export default function BlogPost() {
   };
 
   if (!match) return null;
+
+  if (postQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-primary flex items-center justify-center">
+        <span className="text-accent animate-pulse font-mono">LOADING_POST...</span>
+      </div>
+    );
+  }
+
+  if (postQuery.error) {
+    return (
+      <div className="min-h-screen bg-black text-primary">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">
+          <button
+            onClick={() => setLocation("/blog")}
+            className="flex items-center gap-2 text-accent hover:text-primary transition-colors mb-8 font-mono text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            BACK_TO_BLOG
+          </button>
+          <div className="border border-accent/30 p-8 text-center bg-black/50">
+            <p className="text-muted-foreground font-mono">
+              ERROR: {postQuery.error.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!postQuery.data) {
     return (
@@ -78,6 +112,12 @@ export default function BlogPost() {
               {postQuery.data?.excerpt}
             </p>
           )}
+          {/* Post Tags */}
+          <div className="mt-4 flex gap-2 flex-wrap">
+            {(tagsQuery.data || []).map((t: any) => (
+              <span key={t.id} className="border border-primary/30 text-xs px-2">#{t.name}</span>
+            ))}
+          </div>
         </div>
       </div>
 

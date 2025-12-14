@@ -1,8 +1,14 @@
 export async function createContext(opts) {
-    // TODO: In Phase B auth, parse session cookie or header to identify user
+    const openIdHeader = (opts.req.headers["x-openid"] || opts.req.headers["x-open-id"]);
+    const user = openIdHeader
+        ? {
+            openId: openIdHeader,
+            role: "user",
+        }
+        : null;
     return {
         req: opts.req,
         res: opts.res,
-        user: null,
+        user,
     };
 }

@@ -101,9 +101,6 @@ export default function TerminalNewsletter() {
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="text-xs font-mono p-2 border border-primary/30 bg-black/50 text-muted-foreground">
-          NOTE: Demo mode active. Subscriptions are simulated. In Phase B, emails will be stored internally in MySQL.
-        </div>
         {/* Terminal Display */}
         <div
           ref={terminalRef}
